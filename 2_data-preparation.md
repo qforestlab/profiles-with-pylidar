@@ -53,7 +53,8 @@ RiScan Pro uses the GPU for MTA processing, when available, to convert the .rxp 
 Therefore, we only use CPU to make sure the resulting .rdbx files are the same, thereby ensuring reproducibility. 
 
 To check the that you are getting reproducible .rdbx files, you can access the convert logs (found here: "yourproject.RiSCAN\\project.rdb\\SCANS\\ScanPos001\\SINGLESCANS\\yourscan_timestamp\\").
-Scroll down to the statistics section and observe the values in each zone. The number of zones increases with higher scan frequencies. The 'echoes' in each zone need to remain constant after conversion for reproducible results.
+Scroll down to the statistics section and observe the values in each zone. The number of zones increases with higher scan frequencies. The 'echoes' in each zone need to remain constant after conversion for reproducible results. 
+We have observed these values to be changing depending on whether the GPU was ON or not and whether the GPU was ON but the conversion tool switched to OFF midway, in each case resulting in a different .rdbx file for the same .rxp file.
 
 
 ![](./img/convert_logs.png)
