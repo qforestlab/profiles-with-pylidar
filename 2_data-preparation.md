@@ -1,49 +1,43 @@
 # Data preparation
 
-### Useful information
+Here, we describe how to prepare your data for making vegetation profiles. This manual assumes your RIEGL TLS data has already been processed (e.g. co-registered) using these manuals ([VZ400i](https://github.com/qforestlab/riscan_registration/tree/main) & [VZ400](https://github.com/qforestlab/riscan-registration-VZ400)).
 
-#### Multiple Time Arround
+## Input files
+Making vegetation profiles using pylidar requires 3 files for each scan position: the .rxp, .rdbx and .dat file. These three files (.rxp, .rdbx, .dat) are extracted from the .RiSCAN project. 
 
-RIEGL MTA (Multiple Time Around) processing is especially valuable in terrestrial laser scanning (TLS) of forest environments, where complex canopy structures and varying distances can cause overlapping laser pulse returns. The laser scanners may emit new pulses before previous ones have fully returned due to dense vegetation or long-range targets like tall trees or gaps in the canopy. MTA processing ensures that each return is accurately linked to its correct emitted pulse, preventing range ambiguities and ghost points. 
-
-#### RXP
+### RXP
 The .rxp file format is RIEGL’s proprietary raw data format used to store terrestrial LiDAR scan data. It contains detailed point cloud information, including 3D coordinates, intensity, multiple returns, and scanner metadata such as timestamps and instrument settings. 
 
-#### RDBX
+The .rxp files are created on the scanner when the scanning is done. So they are already present in the raw data (.PROJ) folder. But these files will also be present in the .RiSCAN project folder after importing. 
+
+### RDBX
 The .rdbx file in RIEGL’s LiDAR workflow is a project database used within RiSCAN PRO to organize scan data, metadata, and processing steps, including Multiple-Time-Around (MTA) corrections. When working with long-range terrestrial LiDAR data where multiple laser pulses may overlap in time, MTA processing is essential for accurately resolving pulse ambiguities. Once MTA is applied, the corrected point cloud data is stored and managed within the .rdbx structure.
 
+RIEGL's MTA (Multiple Time Around) processing is especially valuable in terrestrial laser scanning (TLS) of forest environments, where complex canopy structures and varying distances can cause overlapping laser pulse returns. The laser scanners may emit new pulses before previous ones have fully returned due to dense vegetation or long-range targets like tall trees or gaps in the canopy. MTA processing ensures that each return is accurately linked to its correct emitted pulse, preventing range ambiguities and ghost points. 
 
-### Processing in RiSCAN PRO
-
-RiSCAN PRO is used to extract the three files (.rxp, .rdbx, .dat). The process involves converting the rxp to rdbx. 
-
-1) The .rxp files are created when the scan is done. These are present in the .PROJ folder. 
-Sometimes .rdbx files are also present. These files are NOT to be used. Ignore them. 
-
-2) In RiSCAN PRO, switch off the GPU processing, ideally before importing the data. 
+Sometimes during scanning the scanner also produces .rdbx files, which you can find in the raw data but these files are NOT to be used (ignore them) as they have not been fully processed. We want to use the .rdbx files created after importing and converting in RiSCAN PRO. 
+To get the right RDBX files it is important that these files were imported & converted with the GPU processing switched off and no filtering. However, during co-registration this is often not the case, therefore it is important to re-convert the scans which re-does the conversion from the .rxp files and thus removes the filtering. Follow these steps:
+1. Open the RiSCAN PRO project of interest
+2. Switch off the GPU processing
+   
 ![](./img/gpu_settings.png)
 
-3) Create a new project and import the .PROJ file. 
-While importing through the one touch wizard, check the convert all scans on import in settings. 
-This will create new .rdbx files from the .rxp files.
-![](./img/import_settings.png)
+3. Re-convert the scans by right-clicking the scan files. You can select multiple files and right-click to convert them all together.
 
-4) Choose the filter settings (see note below) complete the co-registration of the data following the manuals ([VZ400](https://github.com/qforestlab/riscan-registration-VZ400), [VZ400i](https://github.com/qforestlab/riscan_registration))
-
-5) Export individual SOP files after finalising coregistration.
-![](./img/SOP_export.png)
-
-6) Since you have filtered the scans to improve the co-registration (Step 2 of One-touch wizard), you will have to re-convert the .rxp files. 
-You CANNOT use the filtered .rdbx files for vegetation profiles. Re-convert the scans by right-clicking the scan files. 
-You can select multiple files and right-click to convert them all together.
 ![](./img/select_all.png)
-
 ![](./img/convert.png)
 
-7) Use the [data preparation script](./scripts/02-data_preparation.py) to organise all the files.
+### DAT
+The .dat files contain the Sensor's Orientation and Position for each scan position. 
 
+These files are generally created after finishing co-registration of a RiSCAN project for data management purposes (see [this manual](https://github.com/qforestlab/riscan-registration-VZ400/blob/main/8_save_combine.md)). Make sure these individual SOP files are exported to the .RiSCAN folder. 
 
-### Why are we doing this?
+![](./img/SOP_export.png)
+
+## File organisation
+Use this [data preparation script](./scripts/02-data_preparation.py) to copy all the required files from the .RiSCAN project to a folder which you will use as an input for pylidar. 
+
+## Why are we doing this?
 
 Gap-fraction methods use the information regarding the origin of a pulse and all of its returns. 
 By linking the two sources of information we can basically get an idea of how the pulse of light traveled through the canopy and, importantly, where it was intercepted by vegetation, as recorded by the pulse returns. 
