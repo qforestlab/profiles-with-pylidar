@@ -18,7 +18,7 @@ RIEGL's MTA (Multiple Time Around) processing is especially valuable in terrestr
 Sometimes during scanning the scanner also produces .rdbx files, which you can find in the raw data but these files are NOT to be used (ignore them) as they have not been fully processed. We want to use the .rdbx files created after importing and converting in RiSCAN PRO. 
 To get the right RDBX files it is important that these files were imported & converted with the GPU processing switched off and no filtering. However, during co-registration this is often not the case, therefore it is important to re-convert the scans which re-does the conversion from the .rxp files and thus removes the filtering. Follow these steps:
 1. Open the RiSCAN PRO project of interest
-2. Switch off the GPU processing
+2. Switch off the GPU processing by going to tools > settings > general > data acquisition
    
 ![](./img/gpu_settings.png)
 
