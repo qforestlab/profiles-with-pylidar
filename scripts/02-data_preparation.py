@@ -62,7 +62,7 @@ for folder in glob.glob(os.path.join(path_riscan,"project.rdb", "SCANS", "*"), r
 # (registration>multiple SOP export> in the project.rdb>scans folder)
 
 # loop over all ScanPosXXX folders in project.rdb/SCANS/ and copy rdbx files
-for dat_file in glob.glob(os.path.join(path_riscan,"EXPORTS", "DAT", "ScanPos*.DAT")):
+for dat_file in glob.glob(os.path.join(path_riscan,"ScanPos*.DAT")):
     scanpos_name = os.path.splitext(os.path.basename(dat_file))[0]
 
     # create output folders if not exists (ScanPosxxx)
