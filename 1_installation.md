@@ -1,22 +1,6 @@
 ---
 title: "WSL 2 + VS Code + Miniforge (conda-forge) Setup"
-output:
-  html_document:
-    toc: true
-    toc_depth: 3
-    toc_float: true
-    number_sections: false
-    df_print: paged
-  pdf_document:
-    toc: true
-    number_sections: true
-  github_document:
-    toc: true
-    toc_depth: 3
-fontsize: 11pt
-geometry: margin=1in
-editor_options:
-  chunk_output_type: console
+
 ---
 
 
