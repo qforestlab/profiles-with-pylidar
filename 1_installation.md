@@ -1,13 +1,33 @@
-# WSL 2 + VS Code + Miniforge (conda‑forge) Setup
-
-A concise, general guide to set up a Python development environment on Windows using **WSL 2**, **VS Code**, and **Miniforge**. It also covers cloning a repository, creating a conda environment from `environment.yml`, and (optionally) installing RIEGL libraries for projects that need them.
-
-> **Works best with:** Windows 10/11 (with WSL 2), Ubuntu on WSL, VS Code, and the official Microsoft **WSL**, **Python**, and **Jupyter** extensions.
-
-
+---
+title: "WSL 2 + VS Code + Miniforge (conda-forge) Setup"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: false
+    df_print: paged
+  pdf_document:
+    toc: true
+    number_sections: true
+  github_document:
+    toc: true
+    toc_depth: 3
+fontsize: 11pt
+geometry: margin=1in
+editor_options:
+  chunk_output_type: console
 ---
 
-## 1) Install WSL 2 (Ubuntu)
+
+
+# Overview
+
+A concise, general guide to set up a Python development environment on Windows using **WSL 2**, **VS Code**, and **Miniforge**. It also covers cloning a repository, creating a conda environment from `environment.yml`, and (optionally) installing **RIEGL** libraries for projects that need them.
+
+> **Works best with:** Windows 10/11 (with WSL 2), Ubuntu on WSL, VS Code, and the official Microsoft **WSL**, **Python**, and **Jupyter** extensions.
+
+# Install WSL 2 (Ubuntu)
 
 Open **PowerShell** as Administrator and run:
 
@@ -19,21 +39,17 @@ Restart if prompted. Launch **Ubuntu** from the Start menu to create your Linux 
 
 > **Tip:** Check versions anytime: `wsl --status`
 
----
+# Install VS Code + extensions (Windows)
 
-## 2) Install VS Code + extensions (Windows)
-
-1. Install **Visual Studio Code** on Windows.
+1. Install **Visual Studio Code** on Windows.  
 2. In VS Code (Windows), install these extensions:
-   - **WSL** (ms-vscode-remote.remote-wsl)
-   - **Python** (ms-python.python)
-   - **Jupyter** (ms-toolsai.jupyter)
+   - **WSL** (`ms-vscode-remote.remote-wsl`)
+   - **Python** (`ms-python.python`)
+   - **Jupyter** (`ms-toolsai.jupyter`)
 
 When you later open a project inside WSL (using `code .`), VS Code will connect to your Linux environment and prompt to install these extensions there as well—accept that.
 
----
-
-## 3) Install Miniforge (in WSL Ubuntu)
+# Install Miniforge (in WSL Ubuntu)
 
 In your **Ubuntu (WSL)** terminal:
 
@@ -42,7 +58,7 @@ In your **Ubuntu (WSL)** terminal:
 sudo apt-get update
 sudo apt-get install -y wget git ca-certificates
 
-# Download Miniforge (arm64/x86_64 will be auto-resolved by the URL; change if needed)
+# Download Miniforge (adjust architecture if needed)
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O /tmp/miniforge.sh
 
 # Install Miniforge
@@ -61,9 +77,7 @@ Verify:
 conda --version
 ```
 
----
-
-## 4) Create a workspace
+# Create a workspace
 
 **Recommended:** keep code under your Linux home (fast I/O), not under `/mnt/c`.
 
@@ -72,11 +86,7 @@ mkdir -p "$HOME/projects"
 cd "$HOME/projects"
 ```
 
-> **Permissions:** Avoid `chmod 777`. Default permissions in your home directory are safe. If you must share within a group, prefer something like `chmod 775` and set the group appropriately.
-
----
-
-## 5) Install Git (if not already) and clone your repo
+# Install Git (if not already) and clone your repo
 
 ```bash
 sudo apt-get install -y git
@@ -87,11 +97,9 @@ git clone https://github.com/armstonj/pylidar-tls-canopy.git
 cd pylidar-tls-canopy
 ```
 
-If your project includes an `environment.yml` you wish to edit on Windows, you may copy it out and back later via `/mnt/c/...` paths. However, editing directly in VS Code (connected to WSL) is usually simpler.
+If your project includes an `environment.yml` you wish to edit on Windows, you may copy it out and back later via `/mnt/c/...` paths. However, editing directly in **VS Code connected to WSL** is usually simpler.
 
----
-
-## 6) RIEGL libraries (RDBLIB / RIVLIB)
+# RIEGL libraries (RDBLIB / RIVLIB)
 
 If your project needs RIEGL libraries, place the vendor archives in a subfolder and extract them. Example structure:
 
@@ -114,7 +122,7 @@ unzip rivlib-<VERSION>-x86_64-linux-gcc13.zip -d libs/
 cd ..   # back to project root
 ```
 
-### Environment variables
+## Environment variables
 
 For a one-off session:
 
@@ -139,9 +147,7 @@ source "$HOME/.bashrc"
 
 Replace `<YOUR_PROJECT>` and `<VERSION>` accordingly.
 
----
-
-## 7) Create and populate the conda environment
+# Create and populate the conda environment
 
 If you removed or edited `environment.yml`, make sure the final version is in the project root. Then run:
 
@@ -159,13 +165,13 @@ If the project is a Python package, install it (editable mode optional):
 # Classic install
 pip install .
 
-# or, editable for development
+# or, editable for development (PEP 660)
 pip install -e .
 ```
 
----
+> If you see editable-install errors, your project may need a modern `pyproject.toml` (PEP 660). Use `pip install .` as a fallback.
 
-## 8) Open the project in VS Code (connected to WSL)
+# Open the project in VS Code (connected to WSL)
 
 From the project directory in **WSL**, launch VS Code:
 
@@ -175,24 +181,20 @@ code .
 
 VS Code (Windows) will open, attached to your WSL Ubuntu environment.
 
----
-
-## 9) Select the Python interpreter (the conda env inside WSL)
+# Select the Python interpreter (the conda env inside WSL)
 
 In VS Code (attached to WSL):
 
-1. Press **Ctrl+Shift+P** → **Python: Select Interpreter**.
+1. Press **Ctrl+Shift+P** → **Python: Select Interpreter**.  
 2. Choose the interpreter under your WSL home, e.g.:
 
 ```
 /home/<linux-user>/miniforge3/envs/<env-name>/bin/python
 ```
 
-> This ensures notebooks, terminals, and the debugger use the correct environment.
+This ensures notebooks, terminals, and the debugger use the correct environment.
 
----
-
-## 10) Working with Windows files
+# Working with Windows files
 
 The Windows filesystem is available under `/mnt/c`, `/mnt/d`, etc. You can copy files between Windows and WSL, e.g.:
 
@@ -202,19 +204,14 @@ cp /mnt/c/Users/<YOUR_WINDOWS_USER>/Documents/somefile.txt .
 
 > **Performance note:** Keep active source code, virtual environments, and build artefacts in the **Linux home** for best speed. Use `/mnt/c` mainly for sharing/backups.
 
----
-
-## 11) Troubleshooting
+# Troubleshooting
 
 - **Conda not found after install:** Run `source ~/.bashrc` or restart the WSL shell.  
-- **VS Code doesn’t attach to WSL:** Reinstall the **WSL** extension and reopen folder via WSL terminal using `code .`.  
+- **VS Code doesn’t attach to WSL:** Reinstall the **WSL** extension and reopen the folder via WSL terminal using `code .`.  
 - **Interpreter mismatch:** Re-select the interpreter and ensure the environment is **activated** in the integrated terminal.  
-- **Permissions errors:** Avoid `chmod 777`. Use default home perms or `chmod 775` with proper groups.  
-- **RIEGL libs not found:** Double‑check `RIVLIB`/`RDBLIB` paths and that your process inherits the variables (restart VS Code if needed).If not, consider reinstalling by carefully verifying all paths.
+- **RIEGL libs not found:** Double‑check `RIVLIB`/`RDBLIB` paths and ensure your process inherits the variables (restart VS Code if needed).
 
----
-
-## Example: end‑to‑end (quick reference)
+# Example: end‑to‑end (quick reference)
 
 ```bash
 # WSL Ubuntu
@@ -243,5 +240,3 @@ pip install -e .
 # VS Code
 code .
 ```
-
----
