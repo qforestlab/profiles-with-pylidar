@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 
 
@@ -33,7 +34,7 @@ def get_folders(directory):
     folders_sorted = sorted(folders_unsorted, key=lambda x: int(x.split("ScanPos")[-1]))
     return folders_sorted
 
-def profile_vz(input_dir, input_file, output_dir=None, overwrite=False):
+def profile_vz(input_dir, input_file, output_dir=None, overwrite=False, datetime_now=None):
     locations = pd.read_csv(input_file)
     if output_dir is None:
         output_dir = input_dir
@@ -184,6 +185,7 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False):
         # Write ASCII file: header block + fixed-width table
         header_lines = [
             f"# location_index : {i}",
+            f'# hres_zres_ares  : {vpp.hres} {vpp.zres} {vpp.ares}',
             f"# scanpositions  : {locations.loc[i,'upright_scanposition']} {locations.loc[i,'tilted_scanposition']}",
             f"# rxp_file       : {rxp_pair}",
             f"# rdbx_file      : {rdbx_pair}",
@@ -200,7 +202,8 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False):
             f"# plane_abc      : {param_a} {param_b} {param_c}",
             f"# plane_slope_aspect : {plane_slope} {plane_aspect}",
             f"# query_str      : {' ; '.join(query_str)}",
-            f"# timestamp      : {pd.Timestamp.now().isoformat()}",
+            f"# timestamp      : {datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')}",
+            f"# processed   : {datetime_now}",
             "#",
             "# " + "  ".join(table.columns),
             ""
@@ -220,9 +223,11 @@ def main():
     parser.add_argument("--output_dir", type=str, help="path to directory where to save results")
     parser.add_argument("--overwrite", action='store_true', help="Overwrite existing output files")
     args = parser.parse_args()
+    
+    datetime_now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # You can put the rest of your code here or call other functions
-    profile_vz(args.input_dir, args.input_file, args.output_dir, args.overwrite)
+    profile_vz(args.input_dir, args.input_file, args.output_dir, args.overwrite, datetime_now)
 
 if __name__ == "__main__":
     main()
