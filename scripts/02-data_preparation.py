@@ -13,12 +13,12 @@ import shutil
 
 #path to riscan project (*.RiSCAN)
 #path_riscan = "path/to/.RiSCAN/project"
-path_riscan = r"D:\AmazonFACE\2016-09\RiSCAN\2016-09-17_AF_PLOT8.RiSCAN"
+path_riscan = r"/Stor1/karun/pylidar_sample.RiSCAN/"
 
 
 #path and name of folder that goes into the pylidar pipeline = project name (without .RiSCAN)
 #path_out = "path/to/data/folder"
-path_out = r"F:\AF\2016-09-17_AF_PLOT8.RiSCAN-bis" #r"H:\AF\2025-11-18_AF_PLOT7.RiSCAN-bis" #
+path_out = r"/Stor1/karun/" 
 
 pathin_exist = os.path.exists(path_riscan)
 if pathin_exist:
