@@ -1,8 +1,11 @@
 import os
 import glob
+import laspy
 import numpy as np
 import pandas as pd
 import argparse
+
+from pylidar_tls_canopy import riegl_io
 
 def rotation_matrix_to_yaw_pitch_roll(R):
     pitch = np.arcsin(-R[2, 0])
@@ -10,7 +13,18 @@ def rotation_matrix_to_yaw_pitch_roll(R):
     roll = np.arctan2(R[2, 1], R[2, 2])
     return np.degrees(yaw), np.degrees(pitch), np.degrees(roll)
 
-def process_bis_folder(path_bis_folder, max_dist=1):
+def find_azimuth(path_dat_file, path_las_file, angle):
+# Calculate azimuth range based on point cloud
+    transform_file = riegl_io.read_transform_file(path_dat_file)
+    points = laspy.read(path_las_file)
+    las_x = np.asarray(points['x'])-transform_file[3,0]
+    las_y = np.asarray(points['y'])-transform_file[3,1]
+    las_z = np.asarray(points['z'])-transform_file[3,2]
+    las_rza = riegl_io.xyz2rza(las_x, las_y, las_z)
+    average_azimuth = (np.max(las_rza[-1])+np.min(las_rza[-1]))/2
+    return np.degrees(average_azimuth)-angle,np.degrees(average_azimuth)+angle
+
+def process_bis_folder(path_bis_folder, max_dist=1, path_las_file=None, angle=180):
     records = []
 
     for folder in os.listdir(path_bis_folder):
@@ -95,6 +109,28 @@ def process_bis_folder(path_bis_folder, max_dist=1):
         upright_scan = uprights.iloc[0] if not uprights.empty else None
         tilt_scan = tilts.iloc[0] if not tilts.empty else None
 
+        # Default azimuth values
+        az_min = 0
+        az_max = 360
+
+        # Compute azimuth only if requested and possible
+        if path_las_file is not None and upright_scan is not None:
+            upright_dat = os.path.join(
+                path_bis_folder,
+                upright_scan.scanposition,
+                upright_scan.scanposition + ".DAT"
+            )
+
+            if os.path.exists(upright_dat):
+                try:
+                    az_min, az_max = find_azimuth(
+                        path_dat_file=upright_dat,
+                        path_las_file=path_las_file,
+                        angle=angle
+                    )
+                except Exception as e:
+                    print(f"Azimuth calculation failed for {upright_dat}: {e}")
+
         rows.append({
             "location_id": loc_id,
             "upright_scanposition": upright_scan.scanposition if upright_scan is not None else pd.NA,
@@ -106,8 +142,12 @@ def process_bis_folder(path_bis_folder, max_dist=1):
             "x": g["x"].mean(),
             "y": g["y"].mean(),
             "n_scans": len(g),
-            "skip": "none" if (upright_scan is not None and tilt_scan is not None) else ("tilted" if upright_scan is not None else "all")
+            "azimuth_min": az_min,
+            "azimuth_max": az_max,
+            "skip": "none" if (upright_scan is not None and tilt_scan is not None)
+                    else ("tilted" if upright_scan is not None else "all")
         })
+
 
     pairs_df = pd.DataFrame(rows)
     return pairs_df
@@ -118,11 +158,12 @@ if __name__ == "__main__":
     parser.add_argument("bis_folder", help="Path to the BIS folder containing scan subfolders")
     parser.add_argument("output_csv", help="Path to save the pairs CSV file")
     parser.add_argument("--max_dist", type=float, default=1.0, help="Max distance to consider scans the same location (default=1.0)")
+    parser.add_argument("--path_las", type=str, help="Path to the LAS file for azimuth calculation (optional)")
+    parser.add_argument("--angle", type=float, default=180.0, help="Angle range for azimuth calculation (default=180)")
 
     args = parser.parse_args()
 
-    pairs_df = process_bis_folder(args.bis_folder, max_dist=args.max_dist)
-
+    pairs_df = process_bis_folder(args.bis_folder, max_dist=args.max_dist, path_las_file=args.path_las, angle=args.angle)
     if not pairs_df.empty:
         pairs_df.to_csv(args.output_csv, index=False)
         print(f"Pairs CSV saved to: {args.output_csv}")
