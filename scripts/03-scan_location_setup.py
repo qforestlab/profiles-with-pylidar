@@ -16,13 +16,42 @@ def rotation_matrix_to_yaw_pitch_roll(R):
 def find_azimuth(path_dat_file, path_las_file, angle):
 # Calculate azimuth range based on point cloud
     transform_file = riegl_io.read_transform_file(path_dat_file)
+    #point cloud of the AOI
     points = laspy.read(path_las_file)
+    
+    #move points to scanner coordinate system
     las_x = np.asarray(points['x'])-transform_file[3,0]
     las_y = np.asarray(points['y'])-transform_file[3,1]
     las_z = np.asarray(points['z'])-transform_file[3,2]
-    las_rza = riegl_io.xyz2rza(las_x, las_y, las_z)
-    average_azimuth = (np.max(las_rza[-1])+np.min(las_rza[-1]))/2
-    return np.degrees(average_azimuth)-angle,np.degrees(average_azimuth)+angle
+    
+    _, _, az = riegl_io.xyz2rza(las_x, las_y, las_z)
+    az = np.asarray(az, dtype=float)
+    
+    # drop bad values (just in case)
+    az = az[np.isfinite(az)]
+    if az.size == 0:
+        raise ValueError("No valid azimuth values from AOI points.")
+    
+    # circular mean: average unit vectors then take atan2
+    mean_sin = np.mean(np.sin(az))
+    mean_cos = np.mean(np.cos(az))
+    centre = np.arctan2(mean_sin, mean_cos)  # returns (-π, π]
+
+    # map to 0, 2π
+    if centre < 0:
+        centre += 2 * np.pi
+        
+    start = centre - np.radians(angle) / 2
+    stop = centre + np.radians(angle) / 2
+    
+    if start < 0:
+        start += 2 * np.pi
+    if stop >= 2 * np.pi:
+        stop -= 2 * np.pi
+    
+    return np.degrees(start), np.degrees(stop)
+    
+
 
 def process_bis_folder(path_bis_folder, max_dist=1, path_las_file=None, angle=180):
     records = []
@@ -118,16 +147,14 @@ def process_bis_folder(path_bis_folder, max_dist=1, path_las_file=None, angle=18
             upright_dat = os.path.join(
                 path_bis_folder,
                 upright_scan.scanposition,
-                upright_scan.scanposition + ".DAT"
-            )
+                upright_scan.scanposition + ".DAT")
 
             if os.path.exists(upright_dat):
                 try:
-                    az_min, az_max = find_azimuth(
+                    start, stop = find_azimuth(
                         path_dat_file=upright_dat,
                         path_las_file=path_las_file,
-                        angle=angle
-                    )
+                        angle=angle)
                 except Exception as e:
                     print(f"Azimuth calculation failed for {upright_dat}: {e}")
 
