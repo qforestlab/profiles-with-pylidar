@@ -169,8 +169,8 @@ def process_bis_folder(path_bis_folder, max_dist=1, path_las_file=None, angle=18
             "x": g["x"].mean(),
             "y": g["y"].mean(),
             "n_scans": len(g),
-            "azimuth_min": az_min,
-            "azimuth_max": az_max,
+            "azimuth_start": start,
+            "azimuth_stop": stop,
             "skip": "none" if (upright_scan is not None and tilt_scan is not None)
                     else ("tilted" if upright_scan is not None else "all")
         })
