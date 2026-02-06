@@ -139,7 +139,7 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False, datetime
 
 
         # Profiles
-        vpp.get_pgap_theta_z_sector(start_azimuth=azimuth_start, max_azimuth=azimuth_stop)
+        vpp.get_pgap_theta_z_sector(start_azimuth=azimuth_start, stop_azimuth=azimuth_stop)
         hinge_pai = vpp.calcHingePlantProfiles()
         weighted_pai = vpp.calcSolidAnglePlantProfiles()
         linear_pai = vpp.calcLinearPlantProfiles()
