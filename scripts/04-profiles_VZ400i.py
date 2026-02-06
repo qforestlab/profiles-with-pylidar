@@ -53,7 +53,7 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False, datetime
         upright_rxp_fn = glob.glob(os.path.join(input_dir, locations.loc[i,'upright_scanposition'], "*.rxp"))[0]
         upright_rdbx_fn = glob.glob(os.path.join(input_dir, locations.loc[i,'upright_scanposition'], "*.rdbx"))[0]
         upright_transform_fn = glob.glob(os.path.join(input_dir, locations.loc[i,'upright_scanposition'], "*.DAT"))[0]
-        max_a, min_a = locations.loc[i, 'azimuth_max'], locations.loc[i, 'azimuth_min']
+        azimuth_start, azimuth_stop = locations.loc[i, 'azimuth_start'], locations.loc[i, 'azimuth_stop']
 
         use_tilted = (locations.loc[i, 'skip'] != "tilted")
     
@@ -139,7 +139,7 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False, datetime
 
 
         # Profiles
-        vpp.get_pgap_theta_z(min_azimuth=min_a, max_azimuth=max_a)
+        vpp.get_pgap_theta_z_sector(start_azimuth=azimuth_start, max_azimuth=azimuth_stop)
         hinge_pai = vpp.calcHingePlantProfiles()
         weighted_pai = vpp.calcSolidAnglePlantProfiles()
         linear_pai = vpp.calcLinearPlantProfiles()
