@@ -98,11 +98,13 @@ def process_bis_folder(path_bis_folder, max_dist=1, path_las_file=None, angle=18
         print("No valid scans found in folder.")
         return pd.DataFrame()
 
+    df = df.sort_values("scanposition").reset_index(drop=True)
+
     df["abs_pitch"] = df["pitch"].abs()
     df["orientation"] = np.select(
         [
-            df["abs_pitch"] < 10,
-            (df["abs_pitch"] > 80) & (df["abs_pitch"] < 100)
+            df["abs_pitch"] < 20,
+            (df["abs_pitch"] > 70) & (df["abs_pitch"] < 110)
         ],
         [
             "upright",
@@ -138,10 +140,6 @@ def process_bis_folder(path_bis_folder, max_dist=1, path_las_file=None, angle=18
         upright_scan = uprights.iloc[0] if not uprights.empty else None
         tilt_scan = tilts.iloc[0] if not tilts.empty else None
 
-        # Default azimuth values
-        az_min = 0
-        az_max = 360
-
         # Compute azimuth only if requested and possible
         if path_las_file is not None and upright_scan is not None:
             upright_dat = os.path.join(
@@ -157,6 +155,8 @@ def process_bis_folder(path_bis_folder, max_dist=1, path_las_file=None, angle=18
                         angle=angle)
                 except Exception as e:
                     print(f"Azimuth calculation failed for {upright_dat}: {e}")
+        else:
+            start, stop = 0, 360        # Default azimuth values
 
         rows.append({
             "location_id": loc_id,

@@ -152,14 +152,17 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False, datetime
         freq_v = pattern_v['rectangular']['program']['name']
         res_v = round(pattern_v['rectangular']['phi_increment'], 2)
         
-        pattern_t = json.loads(riegl_rdb.readHeader(tilt_rdbx_fn)['riegl.scan_pattern'])
-        freq_t = pattern_t['rectangular']['program']['name']
-        res_t = round(pattern_t['rectangular']['phi_increment'], 2)
+        if use_tilted:
+            pattern_t = json.loads(riegl_rdb.readHeader(tilt_rdbx_fn)['riegl.scan_pattern'])
+            freq_t = pattern_t['rectangular']['program']['name']
+            res_t = round(pattern_t['rectangular']['phi_increment'], 2)
 
         vrdbfn = os.path.split(upright_rdbx_fn)[1]
         vrxpfn = os.path.split(upright_rxp_fn)[1]
-        trxpfn = os.path.split(tilt_rxp_fn)[1]
-        trdbfn = os.path.split(tilt_rdbx_fn)[1]
+
+        if use_tilted:
+            trxpfn = os.path.split(tilt_rxp_fn)[1]
+            trdbfn = os.path.split(tilt_rdbx_fn)[1]
 
         # Paired (upright " " tilted) values for header
         rxp_pair = vrxpfn + (" " + trxpfn if use_tilted else " NA")
