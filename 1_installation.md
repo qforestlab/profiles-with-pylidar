@@ -6,7 +6,7 @@ title: "WSL 2 + VS Code + Miniforge (conda-forge) Setup"
 
 
 # Overview
-This is a concise, general guide to install pylidar either on your windows or linux machine. Steps 1-3 are only required for the windows setup and show how to setup a Python development environment on Windows using **WSL 2**, **VS Code**, and **Miniforge**. Steps 4-x cover cloning the repository, creating a conda environment from `environment.yml`, and (optionally) installing **RIEGL** libraries for projects that need them. 
+This is a concise, general guide to install pylidar either on your windows or linux machine. Steps 1-3 are only required for the windows setup and show how to setup a Python development environment on Windows using **WSL 2**, **VS Code**, and **Miniforge**. Steps 4-10 cover cloning the repository, creating a conda environment from `environment.yml`, and (optionally) installing **RIEGL** libraries for projects that need them. 
 
 > **Works best with:** Windows 10/11 (with WSL 2), Ubuntu on WSL, VS Code, and the official Microsoft **WSL**, **Python**, and **Jupyter** extensions.
 
