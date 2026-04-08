@@ -6,7 +6,7 @@ title: "WSL 2 + VS Code + Miniforge (conda-forge) Setup"
 
 
 # Overview
-This is a concise, general guide to install pylidar either on your windows or linux machine. Steps 1-3 are only required for the windows setup and show how to set up a Python development environment on Windows using **WSL 2**, **VS Code**, and **Miniforge**. Steps 4-x cover cloning the repository, creating a conda environment from `environment.yml`, and (optionally) installing **RIEGL** libraries for projects that need them. 
+This is a concise, general guide to install pylidar either on your windows or linux machine. Steps 1-3 are only required for the windows setup and show how to setup a Python development environment on Windows using **WSL 2**, **VS Code**, and **Miniforge**. Steps 4-x cover cloning the repository, creating a conda environment from `environment.yml`, and (optionally) installing **RIEGL** libraries for projects that need them. 
 
 > **Works best with:** Windows 10/11 (with WSL 2), Ubuntu on WSL, VS Code, and the official Microsoft **WSL**, **Python**, and **Jupyter** extensions.
 
@@ -32,9 +32,10 @@ Restart if prompted. Launch **Ubuntu** from the Start menu to create your Linux 
 
 When you later open a project inside WSL (using `code .`), VS Code will connect to your Linux environment and prompt to install these extensions there as well—accept that.
 
-# Step 3: Install Miniforge (in WSL Ubuntu)
+# Step 3: Install Miniforge (you can use conda if you prefer)
 
-In your **Ubuntu (WSL)** terminal:
+
+In your **linux (WSL or linux machine)** terminal:
 
 ```bash
 # Update and basic tools
@@ -82,18 +83,22 @@ cd pylidar-tls-canopy
 
 If your project includes an `environment.yml` you wish to edit on Windows, you may copy it out and back later via `/mnt/c/...` paths. However, editing directly in **VS Code connected to WSL** is usually simpler.
 
-# RIEGL libraries (RDBLIB / RIVLIB)
+# Step 6: Organise RIEGL libraries (RDBLIB / RIVLIB)
 
-If your project needs RIEGL libraries (when working with RIEGL data), place the vendor archives in a subfolder and extract them. You can find these here: . Example structure:
+If your project needs RIEGL libraries (when working with RIEGL data), place the RDBLIB and RIVLIB archives in a subfolder and extract them. They can be downloaded from the [RIEGL member area](http://www.riegl.com/members-area/software-downloads/libraries/). It is advisable to keep a copy within the project folder to ensure version traceability.
 
 ```bash
 # Inside your project
 mkdir -p riegl/libs
 cd riegl
 
-# Copy from Windows into WSL (adjust paths/usernames/versions)
+# Copy from Windows into WSL (adjust paths, usernames, and versions)
 cp /mnt/c/Users/<YOUR_WINDOWS_USER>/Documents/6_software/riegl/linux/rdblib-<VERSION>-x86_64-linux.tar.gz .
 cp /mnt/c/Users/<YOUR_WINDOWS_USER>/Documents/6_software/riegl/linux/rivlib-<VERSION>-x86_64-linux-gcc13.zip .
+
+# Note: The trailing "." copies the file into the current directory.
+
+# In case of linux, simply download and copy files to riegl/
 
 # Tools for extraction
 sudo apt-get install -y unzip
@@ -103,17 +108,11 @@ tar -xf rdblib-<VERSION>-x86_64-linux.tar.gz -C libs/
 unzip rivlib-<VERSION>-x86_64-linux-gcc13.zip -d libs/
 
 cd ..   # back to project root
+
+# Remember the paths
 ```
 
-## Environment variables
-
-For a one-off session:
-
-```bash
-export RIVLIB="$PWD/riegl/libs/rivlib-<VERSION>-x86_64-linux-gcc13"
-export RDBLIB="$PWD/riegl/libs/rdblib-<VERSION>-x86_64-linux"
-export PYLIDAR_CXX_FLAGS="-std=c++11"
-```
+# Step 7: Setting up environment variables
 
 To persist across shells, append the same lines to `~/.bashrc`:
 
@@ -130,9 +129,30 @@ source "$HOME/.bashrc"
 
 Replace `<YOUR_PROJECT>` and `<VERSION>` accordingly.
 
-# Create and populate the conda environment
+## Update the environment.yml file
 
-If you removed or edited `environment.yml`, make sure the final version is in the project root. Then run:
+```
+# Copy the absolute paths to the RIVLIB and RDBLIB folders to the environment.yml file. Below is an excerpt from the yml file. 
+
+variables:
+  RIVLIB_ROOT: /gpfs/data1/vclgp/software/rivlib-2_6_0-x86_64-linux-gcc9
+  RDBLIB_ROOT: /gpfs/data1/vclgp/software/rdblib-2.4.0-x86_64-linux
+  PYLIDAR_CXX_FLAGS: -std=c++11 
+
+# Change to the following  
+
+variables:
+  RIVLIB_ROOT: $HOME/projects/<YOUR_PROJECT>/riegl/libs/rivlib-<VERSION>-x86_64-linux-gcc13
+  RDBLIB_ROOT: $HOME/projects/<YOUR_PROJECT>/riegl/libs/rdblib-<VERSION>-x86_64-linux
+  PYLIDAR_CXX_FLAGS: -std=c++11 
+
+# Save the yml file   
+
+```
+
+# Step 8: Create and populate the conda environment
+
+If you removed or edited `environment.yml`, make sure the final version is in the project root with the above changes. Then run:
 
 ```bash
 # From the project root
@@ -141,8 +161,6 @@ conda env create -f environment.yml
 # Activate it
 conda activate <env-name>   # e.g., conda activate pylidar-tls-canopy
 ```
-
-If the project is a Python package, install it (editable mode optional):
 
 ```bash
 # Classic install
@@ -154,22 +172,26 @@ pip install -e .
 
 > If you see editable-install errors, your project may need a modern `pyproject.toml` (PEP 660). Use `pip install .` as a fallback.
 
-# Open the project in VS Code (connected to WSL)
+# Step 9: Open the project in VS Code (connected to WSL, if using WSL)
 
-From the project directory in **WSL**, launch VS Code:
+In case of WSL, navigate to the project folder in WSL terminal and launch VS Code. In case of linux, simply navigate to the project folder and launch VS Code
 
 ```bash
 code .
 ```
 
-VS Code (Windows) will open, attached to your WSL Ubuntu environment.
+VS Code (Windows) will open, attached to your WSL Ubuntu environment if using WSL. It will open normally in Linux. 
 
-# Select the Python interpreter (the conda env inside WSL)
+VSCode also has the SSH connection option to work remotely on a linux machine. The setup can be found [here](https://code.visualstudio.com/docs/remote/ssh). The principle is the same as WSL, where you connect to a remote environment installed in linux (dedicated linux machine or WSL partition) but edit and run code as if it were local.
+
+
+
+# Step 10: Select the Python interpreter (the conda env inside WSL)
 
 In VS Code (attached to WSL):
 
 1. Press **Ctrl+Shift+P** → **Python: Select Interpreter**.  
-2. Choose the interpreter under your WSL home, e.g.:
+2. Choose the interpreter, e.g.:
 
 ```
 /home/<linux-user>/miniforge3/envs/<env-name>/bin/python
@@ -177,7 +199,7 @@ In VS Code (attached to WSL):
 
 This ensures notebooks, terminals, and the debugger use the correct environment.
 
-# Working with Windows files
+## Working with Windows files (only for WSL)
 
 The Windows filesystem is available under `/mnt/c`, `/mnt/d`, etc. You can copy files between Windows and WSL, e.g.:
 
@@ -187,14 +209,14 @@ cp /mnt/c/Users/<YOUR_WINDOWS_USER>/Documents/somefile.txt .
 
 > **Performance note:** Keep active source code, virtual environments, and build artefacts in the **Linux home** for best speed. Use `/mnt/c` mainly for sharing/backups.
 
-# Troubleshooting
+## Troubleshooting
 
 - **Conda not found after install:** Run `source ~/.bashrc` or restart the WSL shell.  
 - **VS Code doesn’t attach to WSL:** Reinstall the **WSL** extension and reopen the folder via WSL terminal using `code .`.  
 - **Interpreter mismatch:** Re-select the interpreter and ensure the environment is **activated** in the integrated terminal.  
-- **RIEGL libs not found:** Double‑check `RIVLIB`/`RDBLIB` paths and ensure your process inherits the variables (restart VS Code if needed).
+- **RIEGL libs not found:** Double‑check `RIVLIB`/`RDBLIB` paths in environment.yml and ensure your process inherits the variables (restart VS Code if needed).
 
-# Example: end‑to‑end (quick reference)
+## Example: end‑to‑end (quick reference)
 
 ```bash
 # WSL Ubuntu
