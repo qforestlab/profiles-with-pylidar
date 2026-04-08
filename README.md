@@ -31,4 +31,4 @@ Other papers that have used profiles from pylidar:
 * [Monitoring spring phenology with high temporal resolution terrestrial LiDAR measurements](https://www.sciencedirect.com/science/article/pii/S0168192315000106)
 * [Variability and bias in active and passive ground-based measurements of effective plant, wood and leaf area index](https://www.sciencedirect.com/science/article/pii/S0168192318300297)
 
-
+Last major update: 08-04-2026, Karun Dayal & Louise Terryn
