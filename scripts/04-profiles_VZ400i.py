@@ -107,10 +107,12 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False, datetime
             query_str=query_str, point_data=True
         )
         
-        dev_min_v = pd.DataFrame(vpp.points)['deviation'].min()
-        dev_max_v = pd.DataFrame(vpp.points)['deviation'].max()
-        ref_min_v = pd.DataFrame(vpp.points)['reflectance'].min()
-        ref_max_v = pd.DataFrame(vpp.points)['reflectance'].max()
+        ref_min_v = vpp.reflectance[0]
+        ref_max_v = vpp.reflectance[1]
+        dev_min_v = vpp.deviation[0]
+        dev_max_v = vpp.deviation[1]
+        range_min_v = vpp.range[0]
+        range_max_v = vpp.range[1]
         upright_transform = riegl_io.read_transform_file(upright_transform_fn)
         utransform_one_line = " ".join(" ".join(f"{v:.6f}" for v in upright_transform[row]) for row in range(4))
 
@@ -121,10 +123,12 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False, datetime
                 rdbx_file=tilt_rdbx_fn, method='WEIGHTED',
                 min_zenith=5, max_zenith=35,
                 query_str=query_str, point_data=True)
-            dev_min_t = pd.DataFrame(vpp.points)['deviation'].min()
-            dev_max_t = pd.DataFrame(vpp.points)['deviation'].max()
-            ref_min_t = pd.DataFrame(vpp.points)['reflectance'].min()
-            ref_max_t = pd.DataFrame(vpp.points)['reflectance'].max()
+            ref_min_t = vpp.reflectance[0]
+            ref_max_t = vpp.reflectance[1]
+            dev_min_t = vpp.deviation[0]
+            dev_max_t = vpp.deviation[1]
+            range_min_t = vpp.range[0]
+            range_max_t = vpp.range[1]
             tilt_transform = riegl_io.read_transform_file(tilt_transform_fn)
             ttransform_one_line = " ".join(" ".join(f"{v:.6f}" for v in tilt_transform[row]) for row in range(4))
 
@@ -160,10 +164,10 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False, datetime
         rdbx_pair = vrdbfn + (" " + trdbfn if use_tilted else " NA")
         res_pair = f"{res_v} {res_t}" if use_tilted else f"{res_v} NA"
         freq_pair = f"{freq_v} {freq_t}" if use_tilted else f"{freq_v} NA"
-        dev_min_max_pair = (f"{dev_min_v} {dev_max_v} " +
-                            (f"{dev_min_t} {dev_max_t}" if use_tilted else " NA NA"))
-        ref_min_max_pair = (f"{ref_min_v} {ref_max_v} " +
-                            (f"{ref_min_t} {ref_max_t}" if use_tilted else " NA NA"))
+        
+        dev_min_max_pair = (f"{dev_min_v} {dev_max_v} " + (f"{dev_min_t} {dev_max_t}" if use_tilted else " NA NA"))
+        ref_min_max_pair = (f"{ref_min_v} {ref_max_v} " + (f"{ref_min_t} {ref_max_t}" if use_tilted else " NA NA"))
+        range_min_max_pair = f"{range_min_v} {range_max_v}" + (f" {range_min_t} {range_max_t}" if use_tilted else " NA NA")
 
         # Build table: height + pgap columns + profile columns 
         table = pd.DataFrame({"height": vpp.height_bin})
@@ -188,6 +192,7 @@ def profile_vz(input_dir, input_file, output_dir=None, overwrite=False, datetime
             f"# frequency      : {freq_pair}",
             f"# deviation_min_max  : {dev_min_max_pair}",
             f"# reflectance_min_max: {ref_min_max_pair}",
+            f"# range_min_max    : {range_min_max_pair}",
             f"# upright_transform : {utransform_one_line}",
             f"# tilted_transform  : {ttransform_one_line if use_tilted else 'NA'}",
             f"# skip_flag      : {locations.loc[i,'skip']}",
@@ -226,3 +231,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+json.loads(riegl_rdb.readHeader("/Stor1/")['riegl.scan_pattern'])
