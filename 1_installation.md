@@ -6,12 +6,11 @@ title: "WSL 2 + VS Code + Miniforge (conda-forge) Setup"
 
 
 # Overview
-
-A concise, general guide to set up a Python development environment on Windows using **WSL 2**, **VS Code**, and **Miniforge**. It also covers cloning a repository, creating a conda environment from `environment.yml`, and (optionally) installing **RIEGL** libraries for projects that need them.
+This is a concise, general guide to install pylidar either on your windows or linux machine. Steps 1-3 are only required for the windows setup and show how to set up a Python development environment on Windows using **WSL 2**, **VS Code**, and **Miniforge**. Steps 4-x cover cloning the repository, creating a conda environment from `environment.yml`, and (optionally) installing **RIEGL** libraries for projects that need them. 
 
 > **Works best with:** Windows 10/11 (with WSL 2), Ubuntu on WSL, VS Code, and the official Microsoft **WSL**, **Python**, and **Jupyter** extensions.
 
-# Install WSL 2 (Ubuntu)
+# Step 1: Install WSL 2 (Ubuntu)
 
 Open **PowerShell** as Administrator and run:
 
@@ -23,7 +22,7 @@ Restart if prompted. Launch **Ubuntu** from the Start menu to create your Linux 
 
 > **Tip:** Check versions anytime: `wsl --status`
 
-# Install VS Code + extensions (Windows)
+# Step 2: Install VS Code + extensions (Windows)
 
 1. Install **Visual Studio Code** on Windows.  
 2. In VS Code (Windows), install these extensions:
@@ -33,7 +32,7 @@ Restart if prompted. Launch **Ubuntu** from the Start menu to create your Linux 
 
 When you later open a project inside WSL (using `code .`), VS Code will connect to your Linux environment and prompt to install these extensions there as well—accept that.
 
-# Install Miniforge (in WSL Ubuntu)
+# Step 3: Install Miniforge (in WSL Ubuntu)
 
 In your **Ubuntu (WSL)** terminal:
 
@@ -61,7 +60,7 @@ Verify:
 conda --version
 ```
 
-# Create a workspace
+# Step 4: Create a workspace
 
 **Recommended:** keep code under your Linux home (fast I/O), not under `/mnt/c`.
 
@@ -70,7 +69,7 @@ mkdir -p "$HOME/projects"
 cd "$HOME/projects"
 ```
 
-# Install Git (if not already) and clone your repo
+# Step 5: Install Git (if not already) and clone your repo
 
 ```bash
 sudo apt-get install -y git
@@ -85,7 +84,7 @@ If your project includes an `environment.yml` you wish to edit on Windows, you m
 
 # RIEGL libraries (RDBLIB / RIVLIB)
 
-If your project needs RIEGL libraries, place the vendor archives in a subfolder and extract them. Example structure:
+If your project needs RIEGL libraries (when working with RIEGL data), place the vendor archives in a subfolder and extract them. You can find these here: . Example structure:
 
 ```bash
 # Inside your project
