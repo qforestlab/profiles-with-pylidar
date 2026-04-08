@@ -112,8 +112,6 @@ The body contains the following columns:
 | `weightedPAVD` | Plant area volume density derived from the solid angle weighted PAI profile |
 | `linearPAVD` | Plant area volume density derived from the linear PAI profile |
 
-## Additional information on methods in pylidar 
-
 ## Additional information on methods in pylidar
 
 ### Background: gap fraction estimation
