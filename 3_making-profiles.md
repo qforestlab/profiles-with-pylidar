@@ -114,26 +114,54 @@ The body contains the following columns:
 
 ## Additional information on methods in pylidar 
 
+## Additional information on methods in pylidar
+
+### Background: gap fraction estimation
+
+The gap fraction at each zenith angle and height bin is computed as:
+
+$$
+P_{gap}(\theta, z) = 1 - \frac{\text{cumulative interceptions}}{\text{total shots}}
+$$
+
+Two sources of bias can affect this estimate:
+
+> [!WARNING]
+> **Inflated numerator — orphan returns:** If returns present in the `.rdbx` file have no matching pulse in the `.rxp` file, they contribute to the interception count without a corresponding shot in the denominator. This drives the cover fraction above 1, producing negative pgap values.
+
+> [!WARNING]
+> **Inflated denominator — pulse filtering:** If pulses whose returns were all removed by `query_str` are not removed from the shot count (`pulse_filter=False`), the denominator grows. This reduces the cover fraction and underestimates PAI, as pulses that were intercepted by the canopy but failed the query filter are counted as gaps instead of interceptions.
+
+---
 
 ### 1) `add_riegl_scan_position` vs `add_riegl_scan_position_scanline`
 
-The `_scanline` variant is an extended version of the original method that introduces two additional capabilities. 
+The `_scanline` variant is an extended version of the original method that introduces two additional capabilities.
 
-First, it uses the scanline index to correctly join the `.rdbx` and `.rxp` files via an inner merge on `scanline` and `scanline_idx`. This discards **orphan returns** — points present in the `.rdbx` file that have no matching pulse in the `.rxp` file. If retained, these unmatched returns contribute interception weight without a corresponding shot in the denominator, which can drive cover fraction above 1 and produce negative pgap values. The scanline join ensures only returns with a valid corresponding pulse are used in the profile calculation.
+**Orphan return removal**
+It uses the scanline index to correctly join the `.rdbx` and `.rxp` files via an inner merge on `scanline` and `scanline_idx`. This discards orphan returns — points present in the `.rdbx` file that have no matching pulse in the `.rxp` file — ensuring only returns with a valid corresponding pulse are used in the profile calculation. This option cannot be adjusted in `add_riegl_scan_position_scanline`. To not use this option, use the classical `add_riegl_scan_position`.
 
-The `pulse_filter` argument controls how pulses are handled when all of their returns have been removed by the `query_str` filter. By default (`pulse_filter=False`), pulses are retained in the shot denominator even if none of their returns passed the query filter — for example, if all returns fell below the reflectance threshold. Setting `pulse_filter=True` removes these pulses from the denominator as well, so that only pulses with at least one valid return contribute to the gap fraction calculation. 
+**Additional arguments**
+- `pulse_filter`: By default (`pulse_filter=False`), pulses are retained in the shot denominator even if none of their returns passed the `query_str` filter. Setting `pulse_filter=True` removes these pulses from the denominator as well, so that only pulses with at least one valid return contribute to the gap fraction calculation.
 
 > [!WARNING]
-> This can affect PAI estimates and should be used with caution, as it changes the definition of what constitutes a gap.
+> This can affect PAI estimates and should be used with caution, as it affects the definition of what constitutes a gap.
 
-Setting `point_data=True` stores the full point cloud in memory for downstream diagnostics, and additionally records the minimum and maximum values of reflectance, deviation, and range for each scan position.
+- `point_data`: Setting `point_data=True` stores the full point cloud in memory for downstream diagnostics, and additionally records the minimum and maximum values of reflectance, deviation, and range for each scan position.
 
 > [!WARNING]
 > Retaining point clouds could result in very large objects. It is advised to use this option sparingly to diagnose the data that was used to compute Pgap.
 
-> [!Note]
-> These methods and arguments are not available in the classical `add_riegl_scan_position`. You will have to modify **04-profiles_VZ400i.py** accordingly. It is written to run `add_riegl_scan_position_scanline` by default. 
+> [!NOTE]
+> These methods and arguments are not available in the classical `add_riegl_scan_position`. The script **04-profiles_VZ400i.py** is written to run `add_riegl_scan_position_scanline` by default.
+
+---
 
 ### 2) `get_pgap_theta_z` vs `get_pgap_theta_z_sector`
 
-Both methods compute the gap fraction (pgap) by zenith angle and height bin, averaged over a specified azimuth range. The difference is in how the azimuth range is defined. `get_pgap_theta_z` takes a centre-based range (`min_azimuth`, `max_azimuth`) and selects all bins within that window. `get_pgap_theta_z_sector` takes explicit start and stop edges and correctly handles **wrap-around sectors** that cross 0°/360° — for example, a sector from 350° to 30° is handled by selecting bins above 350° or below 30°, rather than treating it as an empty or invalid range. This makes `get_pgap_theta_z_sector` the preferred method when scan positions cover a restricted or asymmetric azimuth range.
+Both methods compute the gap fraction by zenith angle and height bin, averaged over a specified azimuth range. The difference is in how the azimuth range is defined.
+
+- `get_pgap_theta_z` takes a centre-based range (`min_azimuth`, `max_azimuth`) and selects all bins within that window.
+- `get_pgap_theta_z_sector` takes explicit start and stop edges and correctly handles **wrap-around sectors** that cross 0°/360° — for example, a sector from 350° to 30° is handled by selecting bins above 350° or below 30°, rather than treating it as an empty or invalid range.
+
+`get_pgap_theta_z_sector` is the preferred method when scan positions cover a restricted or asymmetric azimuth range.
