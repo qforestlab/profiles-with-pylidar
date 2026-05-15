@@ -194,7 +194,6 @@ def height_at_pai_prop(target, height, pai):
 
     return float(h_lo + (target - p_lo) / (p_hi - p_lo) * (h_hi - h_lo))
 
-
 # ---------------------------------------------------------------------------
 # METRICS
 # ---------------------------------------------------------------------------
@@ -208,28 +207,30 @@ def gini(x):
     return (2 * np.sum(np.arange(1, n + 1) * x) / (n * cumx[-1])) - (n + 1) / n
 
 
-def compute_metrics(meta, df, height_mode="both"):
+ESTIMATORS = ("hinge", "weighted", "linear")
+
+
+def compute_metrics_one_estimator(meta, df, estimator, height_mode="both"):
     """
-    Compute canopy structure metrics for a single scan profile.
+    Compute canopy structure metrics for one estimator (hinge / weighted / linear).
 
     Parameters
     ----------
     meta        : dict from parse_profile_file / load_all_profiles
     df          : DataFrame from parse_profile_file
+    estimator   : 'hinge' | 'weighted' | 'linear'
     height_mode : 'abs' | 'rel' | 'both'
-                  abs  -> RH metrics in metres
-                  rel  -> RH metrics as fraction of hmax
-                  both -> both sets of columns
 
     Returns
     -------
-    dict of metrics (one row per scan)
+    dict of metrics (no keys overlap with other estimators — each is prefixed)
     """
     hmax   = meta["hmax"]
-    hres   = meta["hres"]
     height = df["height"].values
-    pai    = df["hinge_pai"].values
-    pavd   = df["hinge_pavd"].values
+    pai    = df[f"{estimator}_pai"].values
+    pavd   = df[f"{estimator}_pavd"].values
+
+    pavd_threshold = meta.get("pavd_threshold", 0.0)
 
     # scalar PAI
     pai_total  = float(pai.max())
@@ -249,31 +250,25 @@ def compute_metrics(meta, df, height_mode="both"):
     rh50_rel = rh50_abs / hmax if hmax > 0 else np.nan
     rh75_rel = rh75_abs / hmax if hmax > 0 else np.nan
     rh99_rel = rh99_abs / hmax if hmax > 0 else np.nan
-    
-    pavd_threshold = meta.get("pavd_threshold", 0.0)
 
-    # PAVD distribution metrics (positive values only)
+    # PAVD distribution metrics (above noise threshold)
     pavd_pos = pavd[pavd > pavd_threshold]
 
     gini_val = gini(pavd_pos) if len(pavd_pos) > 1 else np.nan
-    cv_val = (pavd_pos.std(ddof=1) / pavd_pos.mean()) if len(pavd_pos) > 1 else np.nan
-    pavd_norm = pavd_pos / pavd_pos.sum()
-    shannon  = float(entropy(pavd_norm)) if len(pavd_norm) > 1 else np.nan
+    cv_val   = (pavd_pos.std(ddof=1) / pavd_pos.mean()) if len(pavd_pos) > 1 else np.nan
+    if len(pavd_pos) > 1:
+        pavd_norm = pavd_pos / pavd_pos.sum()
+        shannon  = float(entropy(pavd_norm))
+    else:
+        shannon = np.nan
 
-    # base row — always included
     row = {
-        "source_file"  : meta.get("source_file", ""),
-        "scanpositions": meta.get("scanpositions", ""),
-        "timestamp"    : meta.get("timestamp", ""),
-        "query"        : meta.get("query_str", ""),
-        "hres"         : hres,
-        "hmax"         : hmax,
-        "pai"          : pai_total,
-        "pavd_max"     : pavd_max,
-        "h_pavd_max"   : h_pavd_max,
-        "gini"         : gini_val,
-        "cv"           : cv_val,
-        "shannon"      : shannon,
+        "pai"        : pai_total,
+        "pavd_max"   : pavd_max,
+        "h_pavd_max" : h_pavd_max,
+        "gini"       : gini_val,
+        "cv"         : cv_val,
+        "shannon"    : shannon,
     }
 
     if height_mode in ("abs", "both"):
@@ -283,7 +278,6 @@ def compute_metrics(meta, df, height_mode="both"):
             "rh75_abs": rh75_abs,
             "rh99_abs": rh99_abs,
         })
-
     if height_mode in ("rel", "both"):
         row.update({
             "rh25_rel": rh25_rel,
@@ -295,22 +289,51 @@ def compute_metrics(meta, df, height_mode="both"):
     return row
 
 
+def compute_metrics(meta, df, height_mode="both"):
+    """
+    Compute canopy structure metrics for all three estimators
+    (hinge, weighted, linear).
+
+    Returns
+    -------
+    dict of dicts:
+        {
+          "shared"   : {source_file, scanpositions, timestamp, query, hres, hmax},
+          "hinge"    : {pai, pavd_max, h_pavd_max, gini, cv, shannon, rh*},
+          "weighted" : {...},
+          "linear"   : {...},
+        }
+    """
+    shared = {
+        "source_file"  : meta.get("source_file", ""),
+        "scanpositions": meta.get("scanpositions", ""),
+        "timestamp"    : meta.get("timestamp", ""),
+        "query"        : meta.get("query_str", ""),
+        "hres"         : meta["hres"],
+        "hmax"         : meta["hmax"],
+    }
+
+    out = {"shared": shared}
+    for est in ESTIMATORS:
+        out[est] = compute_metrics_one_estimator(meta, df, est, height_mode=height_mode)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # OUTPUT WRITER
 # ---------------------------------------------------------------------------
-def write_metrics_file(meta, metrics_row, output_path):
+def write_metrics_file(meta, metrics, output_path):
     """
     Write a per-scan output file containing:
       - all original header lines (# key : value)
       - a separator
-      - computed metrics as additional # key : value lines
-
-    No data table — header only.
+      - shared metadata (hmax, etc.)
+      - one block per estimator (hinge / weighted / linear)
 
     Parameters
     ----------
     meta         : dict from parse_profile_file (includes 'header_lines' raw)
-    metrics_row  : dict from compute_metrics
+    metrics      : dict from compute_metrics (with 'shared' and per-estimator keys)
     output_path  : Path to write to
     """
     lines = []
@@ -319,16 +342,13 @@ def write_metrics_file(meta, metrics_row, output_path):
     for line in meta.get("header_lines", []):
         lines.append(line)
 
-    # separator + metrics block
+    # --- Shared metadata ---
+    skip_shared = {"source_file", "hres"}  # already in header
     lines.append("# ---")
-    lines.append("# metrics")
+    lines.append("# shared metadata")
     lines.append("# ---")
-
-    # keys to skip — already in original header or internal
-    skip_keys = {"source_file", "header_lines", "hres"}
-
-    for key, val in metrics_row.items():
-        if key in skip_keys:
+    for key, val in metrics["shared"].items():
+        if key in skip_shared:
             continue
         if isinstance(val, float):
             formatted = f"{val:.6f}"
@@ -336,12 +356,24 @@ def write_metrics_file(meta, metrics_row, output_path):
             formatted = str(val)
         lines.append(f"# {key:<20}: {formatted}")
 
+    # --- One block per estimator ---
+    for est in ESTIMATORS:
+        lines.append("# ---")
+        lines.append(f"# metrics ({est})")
+        lines.append("# ---")
+        for key, val in metrics[est].items():
+            if isinstance(val, float):
+                formatted = f"{val:.6f}"
+            else:
+                formatted = str(val)
+            lines.append(f"# {key:<20}: {formatted}")
+
     Path(output_path).write_text("\n".join(lines) + "\n")
     print(f"  Written: {output_path}")
 
 
 # ---------------------------------------------------------------------------
-# MAIN
+# MAIN (unchanged except for the call signature)
 # ---------------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="TLS profile parser and metrics")
@@ -358,10 +390,10 @@ def main():
 
     print("\nComputing and writing metrics...")
     for meta, df in profiles:
-        row = compute_metrics(meta, df, height_mode=args.height_mode)
+        metrics = compute_metrics(meta, df, height_mode=args.height_mode)
         stem = Path(meta["source_file"]).stem
         out_path = out_dir / f"{stem}_metrics.txt"
-        write_metrics_file(meta, row, out_path)
+        write_metrics_file(meta, metrics, out_path)
 
     print(f"\nDone. {len(profiles)} file(s) written to {out_dir}/")
 
