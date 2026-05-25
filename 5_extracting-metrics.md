@@ -1,6 +1,6 @@
 # Canopy Structure Metrics — A Visual Explainer
 
-This document walks through the metrics computed from a pylidar vertical canopy profile. The example used throughout is a single stitched scan (`r1_001` + `r1_002`) processed at 0.5 m vertical resolution. The file pairs the raw profile — gap fractions, cumulative PAI, and PAVD by height — with a small set of summary metrics derived from it. The goal here is to explain what those metrics mean, both numerically and ecologically.
+This document walks through the metrics computed from a pylidar vertical canopy profile. The example used throughout is a single stitched scan (`r1_001`, which is the upright scan + `r1_002`, which is the tilt scan) processed at 0.5 m vertical resolution. The file pairs the raw profile — gap fractions, cumulative PAI, and PAVD by height — with a small set of summary metrics derived from it. The goal here is to explain what those metrics mean, both numerically and ecologically.
 
 ---
 
